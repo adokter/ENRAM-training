@@ -1,0 +1,187 @@
+---
+title: "Practical 2.1 & 2.2: analysing and visualising profile data"
+output:
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    css: ./lab.css
+---
+## 1. Preparation
+First, lets load the bioRad R package. It's currently not (yet) in the default CRAN repository, but can be downloaded from Github. See [https://github.com/adokter/bioRad](https://github.com/adokter/bioRad) for install instructions.
+```{r, eval=FALSE}
+# load the package
+library(bioRad)
+# check the package version
+packageVersion("bioRad")
+# make sure you have the latest version (0.1.XXX). If you have an older version, download and reinstall it by:
+install_github("adokter/bioRad")
+```
+
+There are two ways to obtain profile data:
+- *ENRAM repository*: in part 1 we ...
+- *Process from volume data yourself*: in part 2 we ...
+
+## 2. Downloading and loading data from ENRAM repository into R
+Browse to \link[http://enram.github.io/data-repository/] and choose a one week period of radar data. Download data from the repository
+```{r, eval=FALSE}
+# define local directory on your machine where to download the profile data
+HOME="~/Dropbox/enram/training school rome/exercises/data/"
+# download some data, here for Sweden, Angelholm radar
+download_vp("2017-01-01", "2017-01-31", "se", "ang", localpath = HOME)
+# set work directory
+setwd(HOME)
+```
+Let's load the vertical profiles into R:
+```{r, eval=FALSE}
+# retrieve the paths of the vertical profile files
+vp_paths=retrieve_vp_paths(HOME, "2016-01-01", "2017-01-17", radar="jab")
+# print the list of files:
+vp_paths
+# read the list of files:
+vplist=readvp.list(vp_paths)
+# print the vplist object:
+vplist
+```
+For this practical, the vertical profiles generated for the kullaberg validation campaign can be downloaded
+```{r load-data, eval=FALSE}
+# download data
+download.file("somefile.zip", destfile = "seang201509-10.zip")
+# unzip the data; the zip file contains a folder '2015' with all the data
+unzip("seang201509-10.zip")
+# load the filenames
+# change path below XXX todo!
+HOME2="~/Documents/radar/SMHI/kullaberg/2015/"
+setwd(HOME2)
+vp_paths=dir(HOME2, recursive=TRUE)
+# let's make a subselection of files: only those that have '20150926' or '20150927' in the filename, i.e. profiles from 26 sep 2015 to 27 sep 2015.
+vp_paths_sep2627=vp_paths[grep("2015092[67]",vp_paths)]
+# read the vertical profiles (hdf5 files) into R
+vplist=readvp.list(vp_paths_sep2627)
+# print the vplist object, to see what's in it:
+vplist
+# save the data, which allows you to load the data more quickly next time
+save(vplist,file="vplist_sep2627.RData")
+```
+
+## 3. Inspecting single vertical profiles
+```{r, eval=FALSE}
+# let's extract a profile from the list, in this example the 250'st profile:
+vp=vplist[250]
+# print some info for this profile to the console
+vp
+# test whether it is night time:
+day(vp)
+# plot the vertical profile, in terms of reflectivity factor
+plot(vp, quantity="dbz")
+# plot the vertical profile, in terms of reflectivity
+plot(vp, quantity="eta")
+# plot the vertical profile, in terms of bird density
+plot(vp, quantity="dens")
+# print the currently assumed radar cross section (RCS) per bird:
+rcs(vp)
+```
+1. If you were to assume the bird's radar cross section is 10 times as large, what will be the effect on the bird density profile?
+1. Same question, but for the reflectivity profile.
+
+The assumed radar cross section can be changed as follows:
+```{r, eval=FALSE}
+# let's change the RCS to 110 cm^2
+rcs(vp) = 110
+```
+1. Verify your answers on the previous two questions, by re-plotting the vertical profiles for the reflectivity and bird density quantities.
+
+## 4. Plotting time series data
+Execute the following code example step by step to get you started
+```{r, eval=FALSE}
+# convert the list of vertical profiles into a time series:
+ts=vpts(vplist)
+# print summary information
+ts
+# extract the position of the radar from the metadata:
+lon=ts$attributes$where$lon
+lat=ts$attributes$where$lat
+# make a subselection for a certain time range, e.g. the night of 26/27
+# september between sunset and 7 UTC
+t.start=suntime(lon,lat,"2015-09-26",rise=F)
+t.end=as.POSIXct("2015-09-27 07:00", tz="UTC")
+ts.night=ts[ts$dates>t.start & ts$dates<t.end]
+# let's set the local time zone to UTC, so all plotted time axes are in UTC
+Sys.setenv(TZ="UTC")
+# plot the time series
+plot(ts.night)
+# add an optional grid to the plot:
+grid(col="black",lty="solid")
+# open the help file for the plotting function.
+# Because timeseries are of class 'vpts', it's associated plotting function is called plot.vpts:
+?plot.vpts
+```
+1. Plot the time series also for reflectivity (quantity `eta`) and reflectivity factor (quantity `dbz`). Use the help documentation to check out the plotting options available.
+1. Interpret the wind barbs in the figure: what is the approximate speed and direction at 1400 metre at 22 UTC. In the speed barbs, each half flag represents 2.5 m/s, each full flag 5 m/s, each pennant (triangle) 25 m/s.
+1. Extract the vertical profile at 22 UTC from the time series and plot the vertical profile of ground speeds (quantity `ff`, see manual for the vp class for full list of available quantities). Check whether your answer to the previous question was approximately correct.
+
+## 5. Vertical integration: surface density & migration traffic rate
+Often you will want to sum together all the migrants in the vertical dimension, for example if you want a single index of how many birds are migrating at a certain instant. There are at least two ways in which you can do that
+
+* by calculating the vertically integrated bird density (VID), which is *surface* density as opposed to a *volume* densities you have been plotting in the previous exercises: this number gives you how many migrants are aloft per square kilometer earth's surface (unit individuals/km$^{2}$), and is a vertical integration of the volume densities  (unit individuals/km$^{3}$).
+* Note that the VID quantity doesn't depend on the speed of the migrants. A common measure that reflects both the density and speed of the migration is migration traffic rate (MTR). This is flux measure that gives you how many migrants are passing the radar station per unit of time and per unit of distance perpendicular to the migratory direction (unit individuals/km/hour).
+
+We will be using bioRad's `vintegrate` function to calculate these quantities
+
+```{r, eval=FALSE}
+# Let's continue with the ts object created in the previous example.
+# The vertically integrated quantities are calculated as follows:
+vintegrated.ts = vintegrate(ts)
+# The vintegrated.ts object you created is a vivp class object, which is an acronym for Vertically Integrated Vertical Profile. It has its own plot method, which by default plots migration traffic rate (MTR):
+plot(vintegrated.ts)
+# you can also plot vertically integrated densities (VID):
+plot(vintegrated.ts, quantity="vid")
+# the gray and white shading indicates day and night, which is calculated 
+# from the date and the radar position. You can also turn this off:
+plot(vintegrated.ts, nightshade = FALSE)
+# execute `?plot.vivp` to open the help page listing all the options.
+```
+
+The following questions only require pen and paper. Assume a hypothetical situation in which the volume density of birds from 0-1000 metre above ground is 200 birds per cubic kilometer, and from 1000-1500 metre 100 birds per cubic kilometer. In the lower layer birds fly at 50 km/hour, and in the upper layer at 100 km/hour. Above 1500 metre there are no birds.
+
+1. What is in this case the bird's surface density (or as we previously called it, vertically integrated density VID)? Give your answer in units birds/km$^2$
+1. What is in this case the migration traffic rate? Give your answer in units birds/km/hour
+
+Both MTR and VID depend on the assumed radar cross section (RCS) per bird. If the RCS is not known, you can alternively use two closely related quantities that do not depend on it:
+
+```{r, eval=FALSE}
+# instead of VID, you can use vertically integrated reflectivity (VIR):
+plot(vintegrated.ts, quantity="vir")
+# instead of MTR, you can use the reflectivity traffic rate (RTR):
+plot(vintegrated.ts, quantity="rtr")
+```
+
+1. Re-plot the vertically integrated quantities discussed so far using a different radar cross section, and verify which quantities are affected by a change in radar cross section.
+
+## 6. Inspecting precipitation signals
+Although automated bird quantificaiton algorithms have mostly proven reliable, distinguishing precipitation from birds can be challenging in specific cases, or may prove more difficult in climates and radars so far not explored. To avoid overinterpratations of data, it is therefore important to be able to inspect your profile data for instances when it was raining.
+
+At C-band, an easy way of doing that is plotting the vertical profile of total reflectivity (quantity DBZH), which includes everything: birds, insects and precipitation.
+
+1. Load data from 20 Sep 2015 12:00 UTC to 21 Sep 2015 12:00 UTC into a time series object. Make a plot of the vertical profile time serie for bird density (quantity `dens`).
+1. Plot the same time series, but now the total reflectivity (quantity `DBZH`). Compare the two plots to identify periods and altitude layers with precipitation. How would you interpret the high bird densities around 20 UTC?
+
+## 7. Inspecting volume scans and profile data together
+Let's go back to the `ts.night` object you created in section 4 (re-execute the code there if you lost the object along the way).
+
+1. plot the migration traffic rates. What is your biological intepretations of the temporal pattern, specifically in relation to the transition between night and day?
+
+plot(ts.night)
+
+## Part I: my first PPI plot
+
+```{r plot-ppi, eval=FALSE}
+data(SCAN)
+ppi=ppi(SCAN)
+plot(ppi,param="VRADH")
+```
+
+Two exercises:
+
+1. Estimate the direction in which the scatters are moving (in clock-wise degrees from North)
+
+2. According to you expert judgement, are these birds or insects. Explain why.
