@@ -136,7 +136,7 @@ plot(vp, quantity="dens")
 rcs(vp)
 ```
 
-1. If you were to assume the bird's radar cross section is 10 times as large, what will be the effect on the bird density profile?
+1. If you change your assumption on the bird's radar cross section in the previous example, and assume it is 10 times as large, what will be the effect on the bird density profile?
 1. Same question, but for the reflectivity profile.
 
 The assumed radar cross section can be changed as follows:
