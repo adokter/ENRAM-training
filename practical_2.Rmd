@@ -7,9 +7,10 @@ output:
     css: ./lab.css
 ---
 ## 1. Preparation
-First, lets load the bioRad R package. It's currently not (yet) in the default CRAN repository, but can be downloaded from Github. See [https://github.com/adokter/bioRad](https://github.com/adokter/bioRad) for install instructions.
+Throughout the practical we will use the bioRad R package. It's currently not (yet) in the default CRAN repository, but can be downloaded from Github. See [https://github.com/adokter/bioRad](https://github.com/adokter/bioRad) for install instructions. Go through steps 1-3 of these install instructions if you haven't done so already. Execute each of the code examples in Rstudio, and try to complete the exercises.
 ```{r, eval=FALSE}
-# load the package
+# make sure you start with a fresh R session
+# load the bioRad package
 library(bioRad)
 # check the package version
 packageVersion("bioRad")
@@ -17,24 +18,53 @@ packageVersion("bioRad")
 install_github("adokter/bioRad")
 ```
 
-There are two ways to obtain profile data:
-- *ENRAM repository*: in part 1 we ...
-- *Process from volume data yourself*: in part 2 we ...
+The first half of this practical deals mostly with vertical profile data of birds, i.e. the bird speed and directions at different altitudes. These profiles are extracted from polar volume data by an automated algorithm (vol2bird). In the second half we will have a look at polar volume data as well.
 
-## 2. Downloading and loading data from ENRAM repository into R
-Browse to \link[http://enram.github.io/data-repository/] and choose a one week period of radar data. Download data from the repository
+All the functions of the bioRad package have fairly elaborated manual pages, that you can refer to at any moment:
+
 ```{r, eval=FALSE}
-# define local directory on your machine where to download the profile data
-HOME="~/Dropbox/enram/training school rome/exercises/data/"
-# download some data, here for Sweden, Angelholm radar
-download_vp("2017-01-01", "2017-01-31", "se", "ang", localpath = HOME)
-# set work directory
-setwd(HOME)
+# bring up the package general help page:
+?bioRad
 ```
-Let's load the vertical profiles into R:
+
+In the help window, you can click on each of the links to pull up help pages of specific functions. Click on the `Index` link at the bottom of each help page to get an overview of all functions and available manual pages.
+
+Start by making a new directory on your local machine that you will use for this practical
+
 ```{r, eval=FALSE}
-# retrieve the paths of the vertical profile files
-vp_paths=retrieve_vp_paths(HOME, "2016-01-01", "2017-01-17", radar="jab")
+# define local directory on your machine where to download data for this practical
+HOME="~/Documents/radar/testschool/"
+# check that the directory exists. If the next statement evaluates to FALSE the directory does not exist, and you need to make it.
+file.exists(HOME)
+# we will make HOME our work directory, the default folder in which R will look
+# for files, and where it will output newly generated files.
+setwd(HOME)
+# Finally, we set the local time zone to UTC, so all plotted time axes will be in UTC
+Sys.setenv(TZ="UTC")
+```
+
+You R session is now properly set up
+
+## 2. Loading radar data into R
+
+There are two ways to obtain bird profile data:
+- *ENRAM repository*: browse to \link[http://enram.github.io/data-repository/] to see what is available. We will start this practical with this approach.
+- *Process from polar volume data into profiles yourself*: in this case you need to have access to polar volume data (also known as level 2 data), the lowest level radar data provided by meteorologists. We will leave this as an exercise for at the end of the practical (section 8).
+
+1. Open your browser and go to the ENRAM repository, and download a zip file with profiles. 
+
+We can make this process a little bit easier with the `download_vp` command:
+```{r, eval=FALSE}
+# Let's download some data for Sweden (country code 'se'), for the Angelholm radar (radar code 'ang'), for the month of January 2017:
+download_vp("2017-01-01", "2017-01-31", "se", "ang", localpath = HOME)
+```
+
+1. Use your favorite file explorer to inspect your HOME directory. It should now list a zip file, which has been unzipped into a directory structure organised as `country/radar/year/month/day/hour/` 
+
+Let's load some of thse vertical profiles into R:
+```{r, eval=FALSE}
+# first we retrieve the paths of the vertical profile files, say for 14-17 January:
+vp_paths=retrieve_vp_paths(HOME, "2017-01-14", "2017-01-17", radar="ang")
 # print the list of files:
 vp_paths
 # read the list of files:
@@ -42,44 +72,65 @@ vplist=readvp.list(vp_paths)
 # print the vplist object:
 vplist
 ```
-For this practical, the vertical profiles generated for the kullaberg validation campaign can be downloaded
+
+As you might have noticed, the ENRAM repository is still quite empty, but we hope to be ready for upcoming spring.
+
+Instead, we will use vertical profiles generated for the ENRAM validation campaign at Kullaberg in Sweden in 2015. We will downloaded the data from a different location:
 ```{r load-data, eval=FALSE}
 # download data
-download.file("somefile.zip", destfile = "seang201509-10.zip")
-# unzip the data; the zip file contains a folder '2015' with all the data
-unzip("seang201509-10.zip")
-# load the filenames
-# change path below XXX todo!
-HOME2="~/Documents/radar/SMHI/kullaberg/2015/"
-setwd(HOME2)
-vp_paths=dir(HOME2, recursive=TRUE)
+download.file("https://github.com/adokter/ENRAM-training/raw/master/data/seang20150920-30.zip", destfile = "seang20150920-30.zip")
+# unzip the data; after unzipping you should have a folder '2015' with all the data
+unzip("seang20150920-30.zip")
+# load all the filenames
+vp_paths=dir(".", recursive=TRUE)
 # let's make a subselection of files: only those that have '20150926' or '20150927' in the filename, i.e. profiles from 26 sep 2015 to 27 sep 2015.
-vp_paths_sep2627=vp_paths[grep("2015092[67]",vp_paths)]
-# read the vertical profiles (hdf5 files) into R
+vp_paths_sep26=vp_paths[grep("20150926",vp_paths)]
+vp_paths_sep27=vp_paths[grep("20150927",vp_paths)]
+vp_paths_sep2627=c(vp_paths_sep26,vp_paths_sep27)
+# read these vertical profiles (hdf5 files) into R (may take 1-2 minutes to load)
 vplist=readvp.list(vp_paths_sep2627)
-# print the vplist object, to see what's in it:
+# print some information on the vplist object. It should contain 576 profiles 
 vplist
-# save the data, which allows you to load the data more quickly next time
+# save the object, which allows you to load the data more quickly next time
 save(vplist,file="vplist_sep2627.RData")
+# you can restore the vplist object at any time as follows:
+load("vplist_sep2627.RData")
 ```
 
 ## 3. Inspecting single vertical profiles
+Now that you have loaded a list of vertical profiles, we can start exploring them. We will start with plotting and inspecting single vertical profiles, i.e. a single profile from the vplist object you have just loaded.
+
 ```{r, eval=FALSE}
 # let's extract a profile from the list, in this example the 250'st profile:
 vp=vplist[250]
 # print some info for this profile to the console
 vp
-# test whether it is night time:
+# test whether this profile was collected at day time:
 day(vp)
 # plot the vertical profile, in terms of reflectivity factor
 plot(vp, quantity="dbz")
 # plot the vertical profile, in terms of reflectivity
 plot(vp, quantity="eta")
+```
+
+These two plots look very different, but they are twice the same data plotted on a different scale.
+
+```
+eta = (radar-wavelength dependent constant) * 10^(dbz/10)
+```
+So `eta` and `dbz` are closely related, the main difference is that reflectivity factors are logarithmic, and reflectivities linear.
+
+The reflectivity factor `dbz` is the quantity used by most meteorologist. It has the useful property that at different radar wavelengths (e.g. S-band versus C-band) the same amount of precipitation shows up at equal reflectivity factors. The same holds for insects, as well as any other target that is much smaller than the radar wavelength (S-band = 10 cm, C-band = 5 cm), the so-called Rayleigh-scattering limit
+
+In the case of birds we are outside the Rayleigh limit, because birds are of similar size as the radar wavelength. In this case the reflectivity quantity `eta` is more similar between S-band and C-band (though might be a little different)
+
+```{r, eval=FALSE}
 # plot the vertical profile, in terms of bird density
 plot(vp, quantity="dens")
 # print the currently assumed radar cross section (RCS) per bird:
 rcs(vp)
 ```
+
 1. If you were to assume the bird's radar cross section is 10 times as large, what will be the effect on the bird density profile?
 1. Same question, but for the reflectivity profile.
 
@@ -91,7 +142,7 @@ rcs(vp) = 110
 1. Verify your answers on the previous two questions, by re-plotting the vertical profiles for the reflectivity and bird density quantities.
 
 ## 4. Plotting time series data
-Execute the following code example step by step to get you started
+We will now examine multiple vertical profiles at once that are ordered into a time series, e.g. the vertical profiles obtained from a single radar over a full day.
 ```{r, eval=FALSE}
 # convert the list of vertical profiles into a time series:
 ts=vpts(vplist)
@@ -101,22 +152,31 @@ ts
 lon=ts$attributes$where$lon
 lat=ts$attributes$where$lat
 # make a subselection for a certain time range, e.g. the night of 26/27
-# september between sunset and 7 UTC
+# september between sunset and 7 UTC. We use the suntime function to calculate sunset
 t.start=suntime(lon,lat,"2015-09-26",rise=F)
 t.end=as.POSIXct("2015-09-27 07:00", tz="UTC")
+# now that we have the start and end dates defined, we can make a subselection:
 ts.night=ts[ts$dates>t.start & ts$dates<t.end]
-# let's set the local time zone to UTC, so all plotted time axes are in UTC
-Sys.setenv(TZ="UTC")
 # plot the time series
 plot(ts.night)
-# add an optional grid to the plot:
-grid(col="black",lty="solid")
 # open the help file for the plotting function.
-# Because timeseries are of class 'vpts', it's associated plotting function is called plot.vpts:
+# Because profile timeseries are of class 'vpts', it's associated plotting function
+# is called plot.vpts:
 ?plot.vpts
 ```
 1. Plot the time series also for reflectivity (quantity `eta`) and reflectivity factor (quantity `dbz`). Use the help documentation to check out the plotting options available.
 1. Interpret the wind barbs in the figure: what is the approximate speed and direction at 1400 metre at 22 UTC. In the speed barbs, each half flag represents 2.5 m/s, each full flag 5 m/s, each pennant (triangle) 25 m/s.
+
+```{r, eval=FALSE}
+# time series objects can be subsetted, just as you may be used to with vectors
+# here we subset the first 50 timesteps:
+ts[1:50]
+# here we extract a single timestep, which gives you back a vertical profile class object:
+ts[100]
+# to extract all the timesteps do:
+ts$dates
+```
+
 1. Extract the vertical profile at 22 UTC from the time series and plot the vertical profile of ground speeds (quantity `ff`, see manual for the vp class for full list of available quantities). Check whether your answer to the previous question was approximately correct.
 
 ## 5. Vertical integration: surface density & migration traffic rate
@@ -139,6 +199,7 @@ plot(vintegrated.ts, quantity="vid")
 # from the date and the radar position. You can also turn this off:
 plot(vintegrated.ts, nightshade = FALSE)
 # execute `?plot.vivp` to open the help page listing all the options.
+?plot.vivp
 ```
 
 The following questions only require pen and paper. Assume a hypothetical situation in which the volume density of birds from 0-1000 metre above ground is 200 birds per cubic kilometer, and from 1000-1500 metre 100 birds per cubic kilometer. In the lower layer birds fly at 50 km/hour, and in the upper layer at 100 km/hour. Above 1500 metre there are no birds.
@@ -146,42 +207,155 @@ The following questions only require pen and paper. Assume a hypothetical situat
 1. What is in this case the bird's surface density (or as we previously called it, vertically integrated density VID)? Give your answer in units birds/km$^2$
 1. What is in this case the migration traffic rate? Give your answer in units birds/km/hour
 
-Both MTR and VID depend on the assumed radar cross section (RCS) per bird. If the RCS is not known, you can alternively use two closely related quantities that do not depend on it:
+Both MTR and VID depend on the assumed radar cross section (RCS) per bird. If you are unwilling to make any assumptions on RCS, you can alternively use two closely related quantities that do not depend on RCS:
 
 ```{r, eval=FALSE}
+# print the currently assumed radar cross section:
+rcs(vintegrated.ts)
 # instead of VID, you can use vertically integrated reflectivity (VIR):
 plot(vintegrated.ts, quantity="vir")
 # instead of MTR, you can use the reflectivity traffic rate (RTR):
 plot(vintegrated.ts, quantity="rtr")
 ```
+VIR gives you the total cross-sectional area of air-borne targets per square kilometer of ground surface, whereas RTR gives you the total cross-sectional area of targets flying across a one kilometer line perpendicalur to the migratory flow per hour.
 
 1. Re-plot the vertically integrated quantities discussed so far using a different radar cross section, and verify which quantities are affected by a change in radar cross section.
 
 ## 6. Inspecting precipitation signals
-Although automated bird quantificaiton algorithms have mostly proven reliable, distinguishing precipitation from birds can be challenging in specific cases, or may prove more difficult in climates and radars so far not explored. To avoid overinterpratations of data, it is therefore important to be able to inspect your profile data for instances when it was raining.
+Although automated bird quantification algorithms become more and more reliable, distinguishing precipitation from birds remains challenging for algoriths in specific cases. It is therefore important to have the skills to  inspect suspicious profiles. That may help you to identify potential errors of the automated methods, and prevent your from overinterpreting the data.
 
-At C-band, an easy way of doing that is plotting the vertical profile of total reflectivity (quantity DBZH), which includes everything: birds, insects and precipitation.
+At C-band, an easy way of doing that is plotting the vertical profile of total reflectivity (quantity DBZH), which includes everything: birds, insects and precipitation. At C-band, precipitation typically has higher reflectivities than birds, and also extends to much higher altitudes.
 
-1. Load data from 20 Sep 2015 12:00 UTC to 21 Sep 2015 12:00 UTC into a time series object. Make a plot of the vertical profile time serie for bird density (quantity `dens`).
-1. Plot the same time series, but now the total reflectivity (quantity `DBZH`). Compare the two plots to identify periods and altitude layers with precipitation. How would you interpret the high bird densities around 20 UTC?
+1. Load data from 20 Sep 2015 12:00 UTC to 21 Sep 2015 12:00 UTC of the Angelholm radar of the kullaberg campaign into a time series object (see section 2). Make a plot of the migration traffic rate throughout the night (see section 5).
 
-## 7. Inspecting volume scans and profile data together
+You should see a strong drop in migration traffic rates around 23 UTC, about halfway through the night, which is relatively early. We will check whether precipitation may have played a role.
+
+1. Make profile plots for this night (see section 4). Make a plot both for bird density (quantity 'dens') and total reflectivity (quantity `DBZH`, showing birds and precipitation combined). Compare the two plots to visually identify periods and altitude layers with precipitation, and make a guess whether rain affected this migration event.
+
+## 7. Relating profile data to underlying polar volume data
+###!!! tot hier gekomen met controle !!!###
+We will inspect this precipitation event in more detail by inspecting the polar volume data of 20 Sep 2015 20:00 UTC
+```{r, eval=FALSE}
+# load the polar volume data
+vol.rain=read.pvol("~/git/ENRAM-training/seang_pvol_20150920T200000Z.h5")
+# print some information about the polar volume
+vol.raing
+# print information about the polar scans in this polar volume:
+vol.rain$scans
+# let's extract the first (lowest elevation scan)
+scan.rain = vol.rain$scans[[1]]
+# print some information about this scan:
+scan.rain
+# before we can plot the scan, we need to project it on a Cartesian grid,
+# i.e. we need to make a Plan Position Indicator (PPI)
+ppi.rain = ppi(scan.rain)
+# print some information about this ppi:
+ppi.rain
+# you can see we projected it on a 500 metre grid.
+# Check the manual of the ppi function to see how you can change the projection
+# Now we are ready to plot the ppi
+# plot the radial velocity:
+plot(ppi.rain, param="DBZH")
+```
+1. The precipitation in this event was convective, showing only few localized but intense thunderstorms. Make also a ppi plot of the radial velocity. How does the texture of the radial velocity of the precipitive areas differ from the areas with biological scattering?
+
+1. Estimate the absolute difference in ground speed of the precipitation and the ground speed of the biological scatterers by visually inspecting the radial velocity plot. Are the biological scatterers birds or insects?
+
 Let's go back to the `ts.night` object you created in section 4 (re-execute the code there if you lost the object along the way).
 
-1. plot the migration traffic rates. What is your biological intepretations of the temporal pattern, specifically in relation to the transition between night and day?
+1. plot the migration traffic rates for the `ts.night` object (see section 5). What is your biological intepretations of the temporal pattern, specifically in relation to the transition between night and day?
+2. Make a time-height plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).
 
-plot(ts.night)
+It should be clear from your last two figures that there are two emersions of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated to see what these two emersions might be.
 
-## Part I: my first PPI plot
-
-```{r plot-ppi, eval=FALSE}
-data(SCAN)
-ppi=ppi(SCAN)
-plot(ppi,param="VRADH")
+```{r, eval=FALSE}
+# download the volume files
+# XXX TODO
+# extract the zip file
+# load the file names
+files=list.files("~/git/ENRAM-training",pattern="seang_pvol_20150927*",full.names=TRUE)
+# plot the file at 4:25 UTC, when the first emersion is present, but the second not yet.
+vol1=read.pvol("~/git/ENRAM-training/seang_pvol_20150927T042500Z.h5")
+# print some information about the polar volume
+vol1
+# print information about the polar scans in this polar volume:
+vol1$scans
+# let's extract the first (lowest elevation scan)
+scan1 = vol1$scans[[3]]
+# print some information about this scan:
+scan1
+# before we can plot the scan, we need to project it on a Cartesian grid,
+# i.e. we need to make a Plan Position Indicator (PPI)
+ppi1 = ppi(scan1)
+# print some information about this ppi:
+ppi1
+# you can see we projected it on a 500 metre grid.
+# Check the manual of the ppi function to see how you can change the projection
+# Now we are ready to plot the ppi
+# plot the radial velocity:
+plot(ppi1, param="VRADH")
+# plot the reflectivity factor:
+plot(ppi1, param="DBZH")
+# even more informative is plotting the data on a google earth map
+# first download the background image:
+satelliteImage=basemap(ppi1,maptype="satellite")
+# then overlay the PPI on the satellite image:
+map(ppi1,param="DBZH",satelliteImage)
 ```
 
-Two exercises:
+1. Make a series of ppi maps for the 2.5 degree polar scan, and save them to disk. Cycle through the images and try to figure out if you can distinghuish the two emersions, and whether they have a different spatial origin. You can either do that by hand, or - if you feel confident with R - use below example code to make and save the images automatically.
 
-1. Estimate the direction in which the scatters are moving (in clock-wise degrees from North)
+```{r, eval=FALSE}
+# first, let's store all the polar volumes we want to plot in a vector:
+files=list.files("~/git/ENRAM-training/20150927",pattern="h5$",full.names=TRUE)
+# load the ggplot2 library, because we will use its ggsave function later on to save images
+library(ggplot2)
+# we will use a for-loop to process the images one by one
+# this very simple loop only prints the contents of variable 'file'
+for (file in files){
+  print(file)
+}
+# now let's make a more advanced for-loop that makes and save the images one by one:
+for (file in files){
+  # 1) read the polar volume 
+  vol=read.pvol(file)
+  # 2) extract the first scan
+  scan=vol$scans[[5]]
+  # 3) make a ppi
+  ppi = ppi(scan)
+  # 4) plot the ppi, and store it in the object 'myPlot'.
+  myPlot=map(ppi,param="DBZH",satelliteImage,zlim=c(-20,15))
+  # 5) make a string with the filename in which to store the image
+  myPlotFilename=paste(file,".jpeg",sep="")
+  # 6) print the filename to the console
+  print(paste("saving file",myPlotFilename,"..."))
+  # 7) save the image
+  ggsave(myPlotFilename,myPlot)
+  # after ending up here, the code will be executed again from the start for the next image
+}
+```
 
-2. According to you expert judgement, are these birds or insects. Explain why.
+# 8. Processing polar volume data into vertical profiles: vol2bird algorithm
+The following steps take you through the process applying the vol2bird algorithm yourself. You need a working installation of Docker (linux / mac) or Docker for Windows (**not** Docker Toolbox, this is an older implementation of Docker for Windows operating systems that is not supported). 
+
+```{r, eval=FALSE}
+  files=list.files("~/git/ENRAM-training/20150927",pattern="h5$",full.names=TRUE)
+  # let's process the first file in vector files
+  file.in=files[1]
+  # run vol2bird
+  vp=vol2bird(file)
+  # vp is now a 'vp' profile object, that you can examine as in the previous exercises
+  vp
+  # alternatively, you may also store the profile as a hdf5 profile,
+  # similar to the profile files in the ENRAM repository
+  # 
+  # let's make an output file (by replacing the substring 'pvol' into 'vp')
+  file.out=gsub("pvol","vp",file)
+  # print the output file name to which we will write:
+  file.out
+  # finally, run vol2bird; this generates an output file as specified in file.out
+  vol2bird(file.in,file.out)
+  # check that we can read the output file:
+  vp=readvp(file.out)
+```
+1. write your own for loop to process a batch of polar volume files. Hint: use a similar appraoch as the for-loop of the previous exercise, in which you processed images.
