@@ -234,12 +234,12 @@ You should see a strong drop in migration traffic rates around 23 UTC, about hal
 
 ## 7. Relating profile data to underlying polar volume data
 ###!!! tot hier gekomen met controle !!!###
-We will inspect this precipitation event in more detail by inspecting the polar volume data of 20 Sep 2015 20:00 UTC
+In this section we will inspect a migration event with combined precipitation and biological scattering in more detail, by examining polar volume data.
 ```{r, eval=FALSE}
 # load the polar volume data
 vol.rain=read.pvol("~/git/ENRAM-training/seang_pvol_20150920T200000Z.h5")
 # print some information about the polar volume
-vol.raing
+vol.rain
 # print information about the polar scans in this polar volume:
 vol.rain$scans
 # let's extract the first (lowest elevation scan)
@@ -264,7 +264,7 @@ plot(ppi.rain, param="DBZH")
 Let's go back to the `ts.night` object you created in section 4 (re-execute the code there if you lost the object along the way).
 
 1. plot the migration traffic rates for the `ts.night` object (see section 5). What is your biological intepretations of the temporal pattern, specifically in relation to the transition between night and day?
-2. Make a time-height plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).
+2. Make a vertical profile plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).
 
 It should be clear from your last two figures that there are two emersions of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated to see what these two emersions might be.
 
@@ -303,7 +303,7 @@ satelliteImage=basemap(ppi1,maptype="satellite")
 map(ppi1,param="DBZH",satelliteImage)
 ```
 
-1. Make a series of ppi maps for the 2.5 degree polar scan, and save them to disk. Cycle through the images and try to figure out if you can distinghuish the two emersions, and whether they have a different spatial origin. You can either do that by hand, or - if you feel confident with R - use below example code to make and save the images automatically.
+1. Make a series of ppi maps for the 2.5 degree polar scan, and save them to disk. Cycle through the images and try to figure out if you can distinghuish the two emersions, and whether they have a different spatial origin. You can either do that by hand, or - if you feel confident with R - use below example code to generate and save the images automatically.
 
 ```{r, eval=FALSE}
 # first, let's store all the polar volumes we want to plot in a vector:
@@ -311,9 +311,9 @@ files=list.files("~/git/ENRAM-training/20150927",pattern="h5$",full.names=TRUE)
 # load the ggplot2 library, because we will use its ggsave function later on to save images
 library(ggplot2)
 # we will use a for-loop to process the images one by one
-# this very simple loop only prints the contents of variable 'file'
-for (file in files){
-  print(file)
+# this simple loop prints the contents of variable 'i' iterating over a numeric vector
+for (i in c(1,2,4,8)){
+  print(paste("in this iteration variable i equals",i))
 }
 # now let's make a more advanced for-loop that makes and save the images one by one:
 for (file in files){
