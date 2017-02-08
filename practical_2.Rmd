@@ -1,24 +1,28 @@
 ---
-title: "Practical 2.1 & 2.2: analysing and visualising profile data"
+title: "Practical 2: 21 Feb 2017 afternoon"
 output:
   html_document:
     theme: cerulean
     highlight: pygments
     css: ./lab.css
 ---
+# P2.1: Basic analysis and visualisation of vertical bird profiles
+
 ## 1. Preparation
 Throughout the practical we will use the bioRad R package. It's currently not (yet) in the default CRAN repository, but can be downloaded from Github. See [https://github.com/adokter/bioRad](https://github.com/adokter/bioRad) for install instructions. Go through steps 1-3 of these install instructions if you haven't done so already. Execute each of the code examples in Rstudio, and try to complete the exercises.
+
 ```{r, eval=FALSE}
 # make sure you start with a fresh R session
 # load the bioRad package
 library(bioRad)
 # check the package version
 packageVersion("bioRad")
-# make sure you have the latest version (0.1.XXX). If you have an older version, download and reinstall it by:
+# make sure you have the latest version (0.2.1). If you have an older version, download and reinstall it by:
+library(devtools)
 install_github("adokter/bioRad")
 ```
 
-The first half of this practical deals mostly with vertical profile data of birds, i.e. the bird speed and directions at different altitudes. These profiles are extracted from polar volume data by an automated algorithm (vol2bird). In the second half we will have a look at polar volume data as well.
+The first half of this practical deals mostly with vertical profile data of birds, i.e. the bird speed and directions at different altitudes. These profiles are extracted from polar volume data by an automated algorithm (vol2bird). In the second half we will have a look at the underlying polar volume data as well.
 
 All the functions of the bioRad package have fairly elaborated manual pages, that you can refer to at any moment:
 
@@ -32,9 +36,10 @@ In the help window, you can click on each of the links to pull up help pages of 
 Start by making a new directory on your local machine that you will use for this practical
 
 ```{r, eval=FALSE}
-# define local directory on your machine where to download data for this practical
-HOME="~/Documents/radar/testschool/"
-# check that the directory exists. If the next statement evaluates to FALSE the directory does not exist, and you need to make it.
+# make a new local directory on your machine where to download data for this practical
+# replace the string below with the path of that directory:
+HOME="your/personal/working/directory/"
+# check that the directory exists. If the next statement evaluates to FALSE, something went wrong: the directory does not exist or you didn't specify its path correctly
 file.exists(HOME)
 # we will make HOME our work directory, the default folder in which R will look
 # for files, and where it will output newly generated files.
@@ -43,7 +48,7 @@ setwd(HOME)
 Sys.setenv(TZ="UTC")
 ```
 
-You R session is now properly set up
+Your R session is now properly set up
 
 ## 2. Loading radar data into R
 
@@ -221,93 +226,102 @@ VIR gives you the total cross-sectional area of air-borne targets per square kil
 
 1. Re-plot the vertically integrated quantities discussed so far using a different radar cross section, and verify which quantities are affected by a change in radar cross section.
 
-## 6. Inspecting precipitation signals
-Although automated bird quantification algorithms become more and more reliable, distinguishing precipitation from birds remains challenging for algoriths in specific cases. It is therefore important to have the skills to  inspect suspicious profiles. That may help you to identify potential errors of the automated methods, and prevent your from overinterpreting the data.
+# P2.1: Advanced interpretation of profile data
 
-At C-band, an easy way of doing that is plotting the vertical profile of total reflectivity (quantity DBZH), which includes everything: birds, insects and precipitation. At C-band, precipitation typically has higher reflectivities than birds, and also extends to much higher altitudes.
+## 6. Inspecting precipitation signals
+Precipitation is known to have a major influence on the timing and intensity of migration, therefore it is a useful skill to be able to inspect profiles for presence of precipitation.
+
+Also, although automated bird quantification algorithms become more and more reliable, distinguishing precipitation from birds remains challenging for algoriths in specific cases. It is therefore important to have the skills to  inspect suspicious profiles. That may help you to identify potential errors of the automated methods, and prevent your from overinterpreting the data.
+
+An easy way of doing that is plotting the vertical profile of total reflectivity (quantity DBZH), which includes everything: birds, insects and precipitation. At C-band, precipitation typically has higher reflectivities than birds, and also extends to much higher altitudes.
 
 1. Load data from 20 Sep 2015 12:00 UTC to 21 Sep 2015 12:00 UTC of the Angelholm radar of the kullaberg campaign into a time series object (see section 2). Make a plot of the migration traffic rate throughout the night (see section 5).
 
 You should see a strong drop in migration traffic rates around 23 UTC, about halfway through the night, which is relatively early. We will check whether precipitation may have played a role.
 
-1. Make profile plots for this night (see section 4). Make a plot both for bird density (quantity 'dens') and total reflectivity (quantity `DBZH`, showing birds and precipitation combined). Compare the two plots to visually identify periods and altitude layers with precipitation, and make a guess whether rain affected this migration event.
+1. Make profile plots for this night (see section 4). Make a plot both for bird density (quantity 'dens') and total reflectivity (quantity `DBZH`, showing birds and precipitation combined). Compare the two plots to visually identify periods and altitude layers with precipitation, and make a qualitative guess how rain may have affected this migration event.
 
 ## 7. Relating profile data to underlying polar volume data
-###!!! tot hier gekomen met controle !!!###
 In this section we will inspect a migration event with combined precipitation and biological scattering in more detail, by examining polar volume data.
 ```{r, eval=FALSE}
+# download the polar volume
+download.file("https://github.com/adokter/ENRAM-training/raw/master/data/seang_pvol_20150920200000.h5",destfile="seang_pvol_20150920200000.h5")
 # load the polar volume data
-vol.rain=read.pvol("~/git/ENRAM-training/seang_pvol_20150920T200000Z.h5")
+pvol=read.pvol("seang_pvol_20150920200000.h5")
 # print some information about the polar volume
-vol.rain
+pvol
 # print information about the polar scans in this polar volume:
-vol.rain$scans
-# let's extract the first (lowest elevation scan)
-scan.rain = vol.rain$scans[[1]]
+pvol$scans
+# let's extract the third scan, which was collected at 1.5 degree elevation:
+pscan = vol.rain$scans[[3]]
 # print some information about this scan:
-scan.rain
+pscan
 # before we can plot the scan, we need to project it on a Cartesian grid,
 # i.e. we need to make a Plan Position Indicator (PPI)
-ppi.rain = ppi(scan.rain)
+my_ppi = ppi(scan.rain)
 # print some information about this ppi:
-ppi.rain
+my_ppi
 # you can see we projected it on a 500 metre grid.
 # Check the manual of the ppi function to see how you can change the projection
 # Now we are ready to plot the ppi
-# plot the radial velocity:
-plot(ppi.rain, param="DBZH")
+# plot the reflectivity factor image:
+plot(my_ppi, param="DBZH")
 ```
-1. The precipitation in this event was convective, showing only few localized but intense thunderstorms. Make also a ppi plot of the radial velocity. How does the texture of the radial velocity of the precipitive areas differ from the areas with biological scattering?
+1. This event contains convective precipitation, characterised by localized but intense thunderstorms, as well as biological scattering. Make also a ppi plot of the radial velocity. How does the texture of the radial velocity of the precipitive areas differ from the areas with biological scattering?
 
-1. Estimate the absolute difference in ground speed of the precipitation and the ground speed of the biological scatterers by visually inspecting the radial velocity plot. Are the biological scatterers birds or insects?
+1. Estimate the absolute difference in ground speed of the precipitation and the ground speed of the biological scatterers by visually inspecting the radial velocity plot. Are the biological scatterers birds or insects? Why?
 
 Let's go back to the `ts.night` object you created in section 4 (re-execute the code there if you lost the object along the way).
 
-1. plot the migration traffic rates for the `ts.night` object (see section 5). What is your biological intepretations of the temporal pattern, specifically in relation to the transition between night and day?
-2. Make a vertical profile plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).
+1. plot the migration traffic rates for the `ts.night` object (see section 5). What is your biological intepretation of the temporal pattern, specifically in relation to the transition between night and day?
+1. Make a vertical profile plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).
 
-It should be clear from your last two figures that there are two emersions of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated to see what these two emersions might be.
+It should be clear from your last two figures that there is peak of nocturnal migration, followed by a peak of diurnal migration. The diurnal peak shows two subsequent departures of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated, to see what these two departures at sunrise might be.
 
 ```{r, eval=FALSE}
 # download the volume files
-# XXX TODO
+download.file("https://www.dropbox.com/s/8cxsmvwphof5c5k/20150927.zip?dl=1","20150927.zip")
 # extract the zip file
+unzip("20150927.zip")
 # load the file names
-files=list.files("~/git/ENRAM-training",pattern="seang_pvol_20150927*",full.names=TRUE)
-# plot the file at 4:25 UTC, when the first emersion is present, but the second not yet.
-vol1=read.pvol("~/git/ENRAM-training/seang_pvol_20150927T042500Z.h5")
+files=list.files(pattern="seang_pvol_20150927",full.names=TRUE)
+# print the file names
+files
+# we will plot the file at 4:30 UTC, when the first emersion is present, but the second not yet (check whether you came to approximately the same answer in the previous exercise)
+pvol=read.pvol(files[4])
 # print some information about the polar volume
-vol1
+pvol
 # print information about the polar scans in this polar volume:
-vol1$scans
-# let's extract the first (lowest elevation scan)
-scan1 = vol1$scans[[3]]
+pvol$scans
+# let's extract the 2 degree elevation scan, in this case the fifth scan
+pscan = pvol$scans[[5]]
 # print some information about this scan:
-scan1
+pscan
 # before we can plot the scan, we need to project it on a Cartesian grid,
 # i.e. we need to make a Plan Position Indicator (PPI)
-ppi1 = ppi(scan1)
+my_ppi = ppi(pscan)
 # print some information about this ppi:
-ppi1
+my_ppi
 # you can see we projected it on a 500 metre grid.
 # Check the manual of the ppi function to see how you can change the projection
 # Now we are ready to plot the ppi
-# plot the radial velocity:
-plot(ppi1, param="VRADH")
-# plot the reflectivity factor:
-plot(ppi1, param="DBZH")
+# plot the reflectivity factor (we adjust the plotting scale to -20 to 15 dBZ):
+plot(my_ppi, param="DBZH", zlim=c(-20,15))
 # even more informative is plotting the data on a google earth map
 # first download the background image:
-satelliteImage=basemap(ppi1,maptype="satellite")
+satelliteImage=basemap(my_ppi,maptype="satellite")
 # then overlay the PPI on the satellite image:
-map(ppi1,param="DBZH",satelliteImage)
+map(my_ppi,param="DBZH",satelliteImage, zlim=c(-20,15))
 ```
 
-1. Make a series of ppi maps for the 2.5 degree polar scan, and save them to disk. Cycle through the images and try to figure out if you can distinghuish the two emersions, and whether they have a different spatial origin. You can either do that by hand, or - if you feel confident with R - use below example code to generate and save the images automatically.
+1. Make a series of ppi maps for the 2.5 degree polar scan for all the volume files you downloaded for this migration event, and save them to disk. Cycle through the images and try to figure out if you can distinghuish the two emersions, and whether they have a different spatial origin. You can either do that by hand, or - if you feel confident with R - use below example code to generate and save the images automatically.
 
 ```{r, eval=FALSE}
-# first, let's store all the polar volumes we want to plot in a vector:
-files=list.files("~/git/ENRAM-training/20150927",pattern="h5$",full.names=TRUE)
+# let's store all the polar volumes we want to plot in a vector:
+# first, get all the files with 'seang_pvol_20150927'
+files=list.files(pattern="seang_pvol_20150927",full.names=TRUE)
+# second, make sure we only use the files that end with 'h5', so hdf5 files only
+files=files[grep("h5$",files)]
 # load the ggplot2 library, because we will use its ggsave function later on to save images
 library(ggplot2)
 # we will use a for-loop to process the images one by one
@@ -339,23 +353,34 @@ for (file in files){
 The following steps take you through the process applying the vol2bird algorithm yourself. You need a working installation of Docker (linux / mac) or Docker for Windows (**not** Docker Toolbox, this is an older implementation of Docker for Windows operating systems that is not supported). 
 
 ```{r, eval=FALSE}
-  files=list.files("~/git/ENRAM-training/20150927",pattern="h5$",full.names=TRUE)
-  # let's process the first file in vector files
-  file.in=files[1]
-  # run vol2bird
-  vp=vol2bird(file)
-  # vp is now a 'vp' profile object, that you can examine as in the previous exercises
-  vp
-  # alternatively, you may also store the profile as a hdf5 profile,
-  # similar to the profile files in the ENRAM repository
-  # 
-  # let's make an output file (by replacing the substring 'pvol' into 'vp')
-  file.out=gsub("pvol","vp",file)
-  # print the output file name to which we will write:
-  file.out
-  # finally, run vol2bird; this generates an output file as specified in file.out
-  vol2bird(file.in,file.out)
-  # check that we can read the output file:
-  vp=readvp(file.out)
+# start your local Docker installation
+# we first test whether R can communicate with Docker:
+checkDocker()
 ```
-1. write your own for loop to process a batch of polar volume files. Hint: use a similar appraoch as the for-loop of the previous exercise, in which you processed images.
+If you get a "Hello from Docker!" welcome message, everything is working and you can start processing
+
+```{r, eval=FALSE}
+# first, get all the files with 'seang_pvol_20150927'
+files=list.files(pattern="seang_pvol_20150927",full.names=TRUE)
+# second, make sure we only use the files that end with 'h5', so hdf5 files only
+files=files[grep("h5$",files)]
+# let's process the first file
+file.in=files[1]
+# run vol2bird
+vp=vol2bird(file.in)
+# vp is now a 'vp' profile object, that you can examine as in the previous exercises
+vp
+# alternatively, you may also store the profile as a hdf5 profile,
+# similar to the profile files stored in the ENRAM repository
+# 
+# let's make an output file (by replacing the substring 'pvol' into 'vp')
+file.out=gsub("pvol","vp",file)
+# print the output file name to which we will write:
+file.out
+# finally, run vol2bird; this generates an output file as specified in file.out
+vol2bird(file.in,file.out)
+# your work directory should now contain a new file 'seang_vp_20150927T055000Z.h5'
+# check that we can read this file:
+vp=readvp(file.out)
+```
+1. write your own for-loop to process a batch of polar volume files. Hint: use a similar approach as the for-loop of the last example in section 7, in which you processed images.
