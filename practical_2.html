@@ -153,6 +153,7 @@ $(document).ready(function () {
 <h1>P2.1: Basic analysis and visualisation of vertical bird profiles</h1>
 <div id="preparation" class="section level2">
 <h2>1. Preparation</h2>
+<p>Radar data needed for this practical can be downloaded from Dropbox. Don’t download everything right now, but when you are asked to in the exercises (so we spread our Wifi use). <a href="https://www.dropbox.com/sh/ajwdo578jfitlsk/AAC6FyCUNGq34K4QdhfQd4wea?dl=0" class="uri">https://www.dropbox.com/sh/ajwdo578jfitlsk/AAC6FyCUNGq34K4QdhfQd4wea?dl=0</a></p>
 <p>Throughout the practical we will use the bioRad R package. It’s currently not (yet) in the default CRAN repository, but can be downloaded from Github. See <a href="https://github.com/adokter/bioRad" class="uri">https://github.com/adokter/bioRad</a> for install instructions. Go through steps 1-3 of these install instructions if you haven’t done so already. Execute each of the code examples in Rstudio, and try to complete the exercises.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># make sure you start with a fresh R session</span>
 <span class="co"># load the bioRad package</span>
@@ -348,21 +349,20 @@ vintegrated.ts =<span class="st"> </span><span class="kw">vintegrate</span>(ts)
 <div id="relating-profile-data-to-underlying-polar-volume-data" class="section level2">
 <h2>7. Relating profile data to underlying polar volume data</h2>
 <p>In this section we will inspect a migration event with combined precipitation and biological scattering in more detail, by examining polar volume data.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># download the polar volume</span>
-<span class="kw">download.file</span>(<span class="st">&quot;https://github.com/adokter/ENRAM-training/raw/master/data/seang_pvol_20150920200000.h5&quot;</span>,<span class="dt">destfile=</span><span class="st">&quot;seang_pvol_20150920200000.h5&quot;</span>)
-<span class="co"># load the polar volume data</span>
-pvol=<span class="kw">read.pvol</span>(<span class="st">&quot;seang_pvol_20150920200000.h5&quot;</span>)
+<p>Before continueing with the next example, first download <a href="https://www.dropbox.com/s/8i2ijttuf9lx1he/P2.seang_pvol_20150920200000.h5?dl=0">this volume file</a> from Dropbox. Unzip the file and put the file in your working directory.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load the polar volume data from the h5 file you just downloaded</span>
+pvol=<span class="kw">read.pvol</span>(<span class="st">&quot;P2.seang_pvol_20150920200000.h5&quot;</span>)
 <span class="co"># print some information about the polar volume</span>
 pvol
 <span class="co"># print information about the polar scans in this polar volume:</span>
 pvol$scans
 <span class="co"># let's extract the third scan, which was collected at 1.5 degree elevation:</span>
-pscan =<span class="st"> </span>vol.rain$scans[[<span class="dv">3</span>]]
+pscan =<span class="st"> </span>pvol$scans[[<span class="dv">3</span>]]
 <span class="co"># print some information about this scan:</span>
 pscan
 <span class="co"># before we can plot the scan, we need to project it on a Cartesian grid,</span>
 <span class="co"># i.e. we need to make a Plan Position Indicator (PPI)</span>
-my_ppi =<span class="st"> </span><span class="kw">ppi</span>(scan.rain)
+my_ppi =<span class="st"> </span><span class="kw">ppi</span>(pscan)
 <span class="co"># print some information about this ppi:</span>
 my_ppi
 <span class="co"># you can see we projected it on a 500 metre grid.</span>
@@ -380,12 +380,10 @@ my_ppi
 <li>Make a vertical profile plot of the diurnal migration from 27 Sep 2015 4:00 UTC to 7:00 UTC (see section 4).</li>
 </ol>
 <p>It should be clear from your last two figures that there is peak of nocturnal migration, followed by a peak of diurnal migration. The diurnal peak shows two subsequent departures of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated, to see what these two departures at sunrise might be.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># download the volume files</span>
-<span class="kw">download.file</span>(<span class="st">&quot;https://www.dropbox.com/s/8cxsmvwphof5c5k/20150927.zip?dl=1&quot;</span>,<span class="st">&quot;20150927.zip&quot;</span>)
-<span class="co"># extract the zip file</span>
-<span class="kw">unzip</span>(<span class="st">&quot;20150927.zip&quot;</span>)
-<span class="co"># load the file names</span>
-files=<span class="kw">list.files</span>(<span class="dt">pattern=</span><span class="st">&quot;seang_pvol_20150927&quot;</span>,<span class="dt">full.names=</span><span class="ot">TRUE</span>)
+<p>Before continueing with the next example, first download <a href="https://www.dropbox.com/s/8cxsmvwphof5c5k/P2.20150927.zip?dl=0">these volume files</a> from Dropbox. Unzip the file and put the newly extracted files in your working directory.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load the file names of the files you just downloaded</span>
+<span class="co"># make sure the h5 files you just downloaded are in your working directory.</span>
+files=<span class="kw">list.files</span>(<span class="kw">paste</span>(HOME, <span class="st">&quot;20150927&quot;</span>, <span class="dt">sep=</span><span class="st">&quot;&quot;</span>), <span class="dt">pattern=</span><span class="st">&quot;seang_pvol_20150927&quot;</span>,<span class="dt">full.names=</span><span class="ot">TRUE</span>)
 <span class="co"># print the file names</span>
 files
 <span class="co"># we will plot the file at 4:30 UTC, when the first emersion is present, but the second not yet (check whether you came to approximately the same answer in the previous exercise)</span>

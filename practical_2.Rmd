@@ -9,6 +9,9 @@ output:
 # P2.1: Basic analysis and visualisation of vertical bird profiles
 
 ## 1. Preparation
+Radar data needed for this practical can be downloaded from Dropbox. Don't download everything right now, but when you are asked to in the exercises (so we spread our Wifi use).
+[https://www.dropbox.com/sh/ajwdo578jfitlsk/AAC6FyCUNGq34K4QdhfQd4wea?dl=0](https://www.dropbox.com/sh/ajwdo578jfitlsk/AAC6FyCUNGq34K4QdhfQd4wea?dl=0) 
+
 Throughout the practical we will use the bioRad R package. It's currently not (yet) in the default CRAN repository, but can be downloaded from Github. See [https://github.com/adokter/bioRad](https://github.com/adokter/bioRad) for install instructions. Go through steps 1-3 of these install instructions if you haven't done so already. Execute each of the code examples in Rstudio, and try to complete the exercises.
 
 ```{r, eval=FALSE}
@@ -243,22 +246,23 @@ You should see a strong drop in migration traffic rates around 23 UTC, about hal
 
 ## 7. Relating profile data to underlying polar volume data
 In this section we will inspect a migration event with combined precipitation and biological scattering in more detail, by examining polar volume data.
+
+Before continueing with the next example, first download [this volume file](https://www.dropbox.com/s/8i2ijttuf9lx1he/P2.seang_pvol_20150920200000.h5?dl=0) from Dropbox. Unzip the file and put the file in your working directory.
+
 ```{r, eval=FALSE}
-# download the polar volume
-download.file("https://github.com/adokter/ENRAM-training/raw/master/data/seang_pvol_20150920200000.h5",destfile="seang_pvol_20150920200000.h5")
-# load the polar volume data
-pvol=read.pvol("seang_pvol_20150920200000.h5")
+# load the polar volume data from the h5 file you just downloaded
+pvol=read.pvol("P2.seang_pvol_20150920200000.h5")
 # print some information about the polar volume
 pvol
 # print information about the polar scans in this polar volume:
 pvol$scans
 # let's extract the third scan, which was collected at 1.5 degree elevation:
-pscan = vol.rain$scans[[3]]
+pscan = pvol$scans[[3]]
 # print some information about this scan:
 pscan
 # before we can plot the scan, we need to project it on a Cartesian grid,
 # i.e. we need to make a Plan Position Indicator (PPI)
-my_ppi = ppi(scan.rain)
+my_ppi = ppi(pscan)
 # print some information about this ppi:
 my_ppi
 # you can see we projected it on a 500 metre grid.
@@ -278,13 +282,12 @@ Let's go back to the `ts.night` object you created in section 4 (re-execute the 
 
 It should be clear from your last two figures that there is peak of nocturnal migration, followed by a peak of diurnal migration. The diurnal peak shows two subsequent departures of birds that coincide with sunrise. We are going to look deeper into the polar volume data from which the vertical profiles were calculated, to see what these two departures at sunrise might be.
 
+Before continueing with the next example, first download [these volume files](https://www.dropbox.com/s/8cxsmvwphof5c5k/P2.20150927.zip?dl=0) from Dropbox. Unzip the file and put the newly extracted files in your working directory.
+
 ```{r, eval=FALSE}
-# download the volume files
-download.file("https://www.dropbox.com/s/8cxsmvwphof5c5k/20150927.zip?dl=1","20150927.zip")
-# extract the zip file
-unzip("20150927.zip")
-# load the file names
-files=list.files(pattern="seang_pvol_20150927",full.names=TRUE)
+# load the file names of the files you just downloaded
+# make sure the h5 files you just downloaded are in your working directory.
+files=list.files(paste(HOME, "20150927", sep=""), pattern="seang_pvol_20150927",full.names=TRUE)
 # print the file names
 files
 # we will plot the file at 4:30 UTC, when the first emersion is present, but the second not yet (check whether you came to approximately the same answer in the previous exercise)
