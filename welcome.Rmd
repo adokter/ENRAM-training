@@ -1,17 +1,19 @@
 ---
-title: "ENRAM training school"
 output:
   html_document:
     theme: cerulean
     highlight: pygments
     css: ./lab.css
 ---
+![](https://raw.githubusercontent.com/adokter/ENRAM-training/master/enramlogo1.jpg)
+
+# ENRAM training school
 Welcome to the ENRAM training school in Rome!
   
-# Programme of the school
+## Programme of the school
 The [agenda](http://adriaandokter.com/ENRAMtraining/agenda.pdf) in pdf format
 
-# Practicals
+## Practicals
 
 Radar data needed for the practicals [can be downloaded from Dropbox](https://www.dropbox.com/sh/ajwdo578jfitlsk/AAC6FyCUNGq34K4QdhfQd4wea?dl=0) 
 
