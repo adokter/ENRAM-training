@@ -9,7 +9,7 @@ output:
 Welcome to the ENRAM training school in Rome!
   
 # Programme of the school
-The [agenda](https://adriaandokter.com/ENRAMtraining/agenda.pdf) in pdf format
+The [agenda](http://adriaandokter.com/ENRAMtraining/agenda.pdf) in pdf format
 
 # Practicals
 
@@ -17,5 +17,5 @@ Radar data needed for the practicals [can be downloaded from Dropbox](https://ww
 
 Practical exercises can be found here:
   
-* [practical P2.1 and P2.2](https://adriaandokter.com/ENRAMtraining/practical2.html)
+* [practical P2.1 and P2.2](http://adriaandokter.com/ENRAMtraining/practical2.html)
 * [practical P3.2](http://rpubs.com/jbuler/ENRAM_Practical_3_2)
