@@ -5,7 +5,7 @@ output: bookdown::gitbook
 ---
 
 ```{r setup, echo=FALSE, message=FALSE}
-SHOW_ANSWERS <- FALSE
+SHOW_ANSWERS <- TRUE
 if (Sys.info()["sysname"] == "Linux") prefix <- "/home/adriaan/" else prefix <- "/Users/amd427/"
 if (SHOW_ANSWERS) knitr::opts_knit$set(root.dir = normalizePath(paste(prefix, "git/training/colorado2022/", sep = "")))
 # knitr::opts_chunk$set(eval=FALSE)
@@ -183,8 +183,8 @@ map(my_ppi, map = basemap, param = "DR", zlim=c(-25,-5), palette = viridis::viri
 ```
 
 ```{r, echo=SHOW_ANSWERS, eval=SHOW_ANSWERS}
-# Now let us screen out the reflectivity areas with DR < -10 dB:
-my_ppi_clean <- calculate_param(my_ppi, DBZH = ifelse(DR < -10, NA, DBZH))
+# Now let us screen out the reflectivity areas with DR < -12 dB:
+my_ppi_clean <- calculate_param(my_ppi, DBZH = ifelse(DR < -12, NA, DBZH))
 # plot the original and cleaned up reflectivity:
 map(my_ppi, map = basemap, param = "DBZH", zlim = c(-20, 40))
 map(my_ppi_clean, map = basemap, param = "DBZH", zlim = c(-20, 40))
